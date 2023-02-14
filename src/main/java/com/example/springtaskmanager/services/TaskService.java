@@ -44,6 +44,12 @@ public class TaskService {
         }
     }
 
+    public static class IncompleteTasksNotFoundException extends IllegalStateException {
+        public IncompleteTasksNotFoundException() {
+            super("Incomplete tasks not found"); 
+        }
+    }
+
     public static class IncorrectDateException extends RuntimeException {
         public IncorrectDateException(String date) {
             super("Format of " + date + " is not correct. It should be ('yyyy-MM-dd')");
@@ -136,11 +142,21 @@ public class TaskService {
         throw new TaskNotFoundByTitleException(title);
     }
 
-    public List<TaskEntity> getTasksByCompleted(Boolean completed) {
-        var tasksOptional = this.tasksRepository.findAllByCompletedTrue(completed);
+    public List<TaskEntity> getCompletedTasks() {
+        var tasksOptional = this.tasksRepository.findAllByCompletedTrue();
         if (tasksOptional.isPresent()) {
             return tasksOptional.get();
         }
         throw new CompletedTasksNotFoundException();
     }
+
+    public List<TaskEntity> getIncompleteTasks() {
+        var tasksOptional = this.tasksRepository.findAllByCompletedFalse();
+        if (tasksOptional.isPresent()) {
+            return tasksOptional.get();
+        }
+        throw new IncompleteTasksNotFoundException();
+    }
+
+
 }

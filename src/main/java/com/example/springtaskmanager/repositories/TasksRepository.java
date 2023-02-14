@@ -14,7 +14,8 @@ public interface TasksRepository extends JpaRepository<TaskEntity, Long> {
     
     List<TaskEntity> findAll();
     Optional<List<TaskEntity>> findAllByTitle(String title);
-    Optional<List<TaskEntity>> findAllByCompletedTrue(Boolean completed);
+    Optional<List<TaskEntity>> findAllByCompletedTrue();
+    Optional<List<TaskEntity>> findAllByCompletedFalse();
     List<TaskEntity> findAllByCompletedAndDueDateBefore(Boolean completed, Date dueDate);
       
 }

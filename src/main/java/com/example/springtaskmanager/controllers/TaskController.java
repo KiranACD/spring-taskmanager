@@ -35,95 +35,56 @@ public class TaskController {
     }
 
     @GetMapping("/tasks")
-    public ResponseEntity<List<TaskResponseDTO>> getTasks() {
-        List<TaskEntity> tasks = this.taskService.getTasks();
-        List<TaskResponseDTO> taskResponseDTOs = new ArrayList<>();
-        for (TaskEntity task: tasks) {
-            TaskResponseDTO taskResponseDTO = new TaskResponseDTO();
-            taskResponseDTO.setTitle(task.getTitle());
-            taskResponseDTO.setDescription(task.getDescription());
-            taskResponseDTO.setDueDate(task.getDueDate());
-            taskResponseDTO.setCompleted(task.getCompleted());
-            taskResponseDTO.setNotes(task.getNotes());
-            taskResponseDTO.setId(task.getId());
-            taskResponseDTOs.add(taskResponseDTO);
+    public ResponseEntity<List<TaskResponseDTO>> getTasks(@RequestParam(name="title", required = false) String title, @RequestParam(name="completed", required = false) Boolean completed) {
+        if ((title == null) & (completed == null)) {
+            List<TaskEntity> tasks = this.taskService.getTasks();
+            List<TaskResponseDTO> responseDTOs = createListOfResponseDTOs(tasks);
+            return ResponseEntity.ok(responseDTOs);
+        } else if (title == null) {
+            return getTasksByCompleted(completed);
+        } else {
+            return getTasksByTitle(title);
         }
-        return ResponseEntity.ok(taskResponseDTOs);
     }
 
     @PostMapping("/tasks")
     public ResponseEntity<TaskResponseDTO> createTask(@RequestBody CreateTaskDTO task) {
         var newTask = this.taskService.createTask(task.getTitle(), task.getDescription(), task.getDueDate());
         var savedNewTask = this.taskService.saveTask(newTask);
-        TaskResponseDTO taskResponseDTO = new TaskResponseDTO();
-        taskResponseDTO.setTitle(savedNewTask.getTitle());
-        taskResponseDTO.setDescription(savedNewTask.getDescription());
-        taskResponseDTO.setDueDate(savedNewTask.getDueDate());
-        taskResponseDTO.setCompleted(savedNewTask.getCompleted());
-        taskResponseDTO.setId(savedNewTask.getId());
-        taskResponseDTO.setNotes(savedNewTask.getNotes());
+        TaskResponseDTO taskResponseDTO = createResponseDTO(savedNewTask);
         return ResponseEntity.created(URI.create("/tasks/"+taskResponseDTO.getId())).body(taskResponseDTO);
     }
 
-    @GetMapping("/tasks")
-    public ResponseEntity<List<TaskResponseDTO>> getTasksByTitle(@RequestParam(name="title") String title) {
-        List<TaskResponseDTO> responseDTOs = new ArrayList<>();
+    public ResponseEntity<List<TaskResponseDTO>> getTasksByTitle(String title) {
         List<TaskEntity> tasks = this.taskService.getTasksByTitle(title);
-        for (TaskEntity task: tasks) {
-            TaskResponseDTO taskResponseDTO = new TaskResponseDTO();
-            taskResponseDTO.setTitle(task.getTitle());
-            taskResponseDTO.setDescription(task.getDescription());
-            taskResponseDTO.setDueDate(task.getDueDate());
-            taskResponseDTO.setCompleted(task.getCompleted());
-            taskResponseDTO.setNotes(task.getNotes());
-            taskResponseDTO.setId(task.getId());
-            responseDTOs.add(taskResponseDTO);
-        }
+        List<TaskResponseDTO> responseDTOs = createListOfResponseDTOs(tasks);
         return ResponseEntity.ok(responseDTOs);
 
     }
 
-    @GetMapping("/tasks")
-    public ResponseEntity<List<TaskResponseDTO>> getCompletedTasks(@RequestParam(name="completed") Boolean completed) {
-        List<TaskResponseDTO> responseDTOs = new ArrayList<>();
-        List<TaskEntity> tasks = this.taskService.getTasksByCompleted(completed);
-        for (TaskEntity task: tasks) {
-            TaskResponseDTO taskResponseDTO = new TaskResponseDTO();
-            taskResponseDTO.setTitle(task.getTitle());
-            taskResponseDTO.setDescription(task.getDescription());
-            taskResponseDTO.setDueDate(task.getDueDate());
-            taskResponseDTO.setCompleted(task.getCompleted());
-            taskResponseDTO.setNotes(task.getNotes());
-            taskResponseDTO.setId(task.getId());
-            responseDTOs.add(taskResponseDTO);
+    public ResponseEntity<List<TaskResponseDTO>> getTasksByCompleted(Boolean completed) {
+        if (completed == true) {
+            List<TaskEntity> tasks = this.taskService.getCompletedTasks();
+            List<TaskResponseDTO> responseDTOs = createListOfResponseDTOs(tasks);
+            return ResponseEntity.ok(responseDTOs);
+        } else {
+            List<TaskEntity> tasks = this.taskService.getIncompleteTasks();
+            List<TaskResponseDTO> responseDTOs = createListOfResponseDTOs(tasks);
+            return ResponseEntity.ok(responseDTOs);
         }
-        return ResponseEntity.ok(responseDTOs);
-
     }
 
     @GetMapping("/tasks/{id}")
     public ResponseEntity<TaskResponseDTO> getTaskById(@PathVariable("id") Long id) {
         TaskEntity task = this.taskService.getTaskById(id);
-        TaskResponseDTO taskResponseDTO = new TaskResponseDTO();
-        taskResponseDTO.setTitle(task.getTitle());
-        taskResponseDTO.setDescription(task.getDescription());
-        taskResponseDTO.setDueDate(task.getDueDate());
-        taskResponseDTO.setCompleted(task.getCompleted());
-        taskResponseDTO.setId(task.getId());
-        taskResponseDTO.setNotes(task.getNotes());
+        TaskResponseDTO taskResponseDTO = createResponseDTO(task);
         return ResponseEntity.ok(taskResponseDTO);
     }
 
     @DeleteMapping("/tasks/{id}")
     public ResponseEntity<TaskResponseDTO> deleteTask(@PathVariable("id") Long id) {
         TaskEntity task = this.taskService.deleteTask(id);
-        TaskResponseDTO taskResponseDTO = new TaskResponseDTO();
-        taskResponseDTO.setTitle(task.getTitle());
-        taskResponseDTO.setDescription(task.getDescription());
-        taskResponseDTO.setDueDate(task.getDueDate());
-        taskResponseDTO.setCompleted(task.getCompleted());
-        taskResponseDTO.setId(task.getId());
-        taskResponseDTO.setNotes(task.getNotes());
+        TaskResponseDTO taskResponseDTO = createResponseDTO(task);
         return ResponseEntity.accepted().body(taskResponseDTO);  
     }
 
@@ -132,13 +93,7 @@ public class TaskController {
 
         TaskEntity updatedTask = this.taskService.updateTask(id, task.getTitle(), task.getDescription(), task.getDueDate(), task.getCompleted());
         this.taskService.saveTask(updatedTask);
-        TaskResponseDTO taskResponseDTO = new TaskResponseDTO();
-        taskResponseDTO.setTitle(updatedTask.getTitle());
-        taskResponseDTO.setDescription(updatedTask.getDescription());
-        taskResponseDTO.setDueDate(updatedTask.getDueDate());
-        taskResponseDTO.setCompleted(updatedTask.getCompleted());
-        taskResponseDTO.setId(updatedTask.getId());
-        taskResponseDTO.setNotes(updatedTask.getNotes());
+        TaskResponseDTO taskResponseDTO = createResponseDTO(updatedTask);
         return ResponseEntity.accepted().body(taskResponseDTO);
     }
 
@@ -154,11 +109,32 @@ public class TaskController {
     //          ...
     //      }  
     //}
+    
+    public TaskResponseDTO createResponseDTO(TaskEntity task) {
+        TaskResponseDTO taskResponseDTO = new TaskResponseDTO();
+        taskResponseDTO.setTitle(task.getTitle());
+        taskResponseDTO.setDescription(task.getDescription());
+        taskResponseDTO.setDueDate(task.getDueDate());
+        taskResponseDTO.setCompleted(task.getCompleted());
+        taskResponseDTO.setId(task.getId());
+        taskResponseDTO.setNotes(task.getNotes());
+        return taskResponseDTO;
+    }
+
+    public List<TaskResponseDTO> createListOfResponseDTOs(List<TaskEntity> tasks) {
+        List<TaskResponseDTO> responseDTOs = new ArrayList<>();
+        for (TaskEntity task: tasks) {
+            var responseDTO = createResponseDTO(task);
+            responseDTOs.add(responseDTO);
+        }
+        return responseDTOs;
+    }
 
     @ExceptionHandler({
         TaskService.TaskNotFoundException.class,
         TaskService.TaskNotFoundByTitleException.class,
         TaskService.CompletedTasksNotFoundException.class,
+        TaskService.IncompleteTasksNotFoundException.class,
         TaskService.IncorrectDateException.class,
         TaskService.IncorrectDueDateException.class,
         RuntimeException.class
@@ -172,7 +148,8 @@ public class TaskController {
                 );
             } else if ((e instanceof TaskService.TaskNotFoundException)
                     || (e instanceof TaskService.TaskNotFoundByTitleException)
-                    || (e instanceof TaskService.CompletedTasksNotFoundException)) {
+                    || (e instanceof TaskService.CompletedTasksNotFoundException)
+                    || (e instanceof TaskService.IncompleteTasksNotFoundException)) {
             return new ResponseEntity<ErrorResponse>(
                     new ErrorResponse(e.getMessage()),
                     HttpStatus.NOT_FOUND
