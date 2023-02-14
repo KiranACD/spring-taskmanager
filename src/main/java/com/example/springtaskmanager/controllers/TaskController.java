@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 
@@ -62,6 +63,42 @@ public class TaskController {
         taskResponseDTO.setId(savedNewTask.getId());
         taskResponseDTO.setNotes(savedNewTask.getNotes());
         return ResponseEntity.created(URI.create("/tasks/"+taskResponseDTO.getId())).body(taskResponseDTO);
+    }
+
+    @GetMapping("/tasks")
+    public ResponseEntity<List<TaskResponseDTO>> getTasksByTitle(@RequestParam(name="title") String title) {
+        List<TaskResponseDTO> responseDTOs = new ArrayList<>();
+        List<TaskEntity> tasks = this.taskService.getTasksByTitle(title);
+        for (TaskEntity task: tasks) {
+            TaskResponseDTO taskResponseDTO = new TaskResponseDTO();
+            taskResponseDTO.setTitle(task.getTitle());
+            taskResponseDTO.setDescription(task.getDescription());
+            taskResponseDTO.setDueDate(task.getDueDate());
+            taskResponseDTO.setCompleted(task.getCompleted());
+            taskResponseDTO.setNotes(task.getNotes());
+            taskResponseDTO.setId(task.getId());
+            responseDTOs.add(taskResponseDTO);
+        }
+        return ResponseEntity.ok(responseDTOs);
+
+    }
+
+    @GetMapping("/tasks")
+    public ResponseEntity<List<TaskResponseDTO>> getCompletedTasks(@RequestParam(name="completed") Boolean completed) {
+        List<TaskResponseDTO> responseDTOs = new ArrayList<>();
+        List<TaskEntity> tasks = this.taskService.getTasksByCompleted(completed);
+        for (TaskEntity task: tasks) {
+            TaskResponseDTO taskResponseDTO = new TaskResponseDTO();
+            taskResponseDTO.setTitle(task.getTitle());
+            taskResponseDTO.setDescription(task.getDescription());
+            taskResponseDTO.setDueDate(task.getDueDate());
+            taskResponseDTO.setCompleted(task.getCompleted());
+            taskResponseDTO.setNotes(task.getNotes());
+            taskResponseDTO.setId(task.getId());
+            responseDTOs.add(taskResponseDTO);
+        }
+        return ResponseEntity.ok(responseDTOs);
+
     }
 
     @GetMapping("/tasks/{id}")
@@ -120,6 +157,8 @@ public class TaskController {
 
     @ExceptionHandler({
         TaskService.TaskNotFoundException.class,
+        TaskService.TaskNotFoundByTitleException.class,
+        TaskService.CompletedTasksNotFoundException.class,
         TaskService.IncorrectDateException.class,
         TaskService.IncorrectDueDateException.class,
         RuntimeException.class
@@ -131,7 +170,9 @@ public class TaskController {
                     new ErrorResponse(e.getMessage()),
                     HttpStatus.BAD_REQUEST
                 );
-            } else if (e instanceof TaskService.TaskNotFoundException) {
+            } else if ((e instanceof TaskService.TaskNotFoundException)
+                    || (e instanceof TaskService.TaskNotFoundByTitleException)
+                    || (e instanceof TaskService.CompletedTasksNotFoundException)) {
             return new ResponseEntity<ErrorResponse>(
                     new ErrorResponse(e.getMessage()),
                     HttpStatus.NOT_FOUND

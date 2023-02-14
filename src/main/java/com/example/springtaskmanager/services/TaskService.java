@@ -32,6 +32,18 @@ public class TaskService {
         }
     }
 
+    public static class TaskNotFoundByTitleException extends IllegalStateException {
+        public TaskNotFoundByTitleException(String title) {
+            super("Tasks with title " + title + " not found"); 
+        }
+    }
+
+    public static class CompletedTasksNotFoundException extends IllegalStateException {
+        public CompletedTasksNotFoundException() {
+            super("Completed tasks not found"); 
+        }
+    }
+
     public static class IncorrectDateException extends RuntimeException {
         public IncorrectDateException(String date) {
             super("Format of " + date + " is not correct. It should be ('yyyy-MM-dd')");
@@ -95,6 +107,7 @@ public class TaskService {
     public TaskEntity getReferenceById(Long taskId) {
         return this.tasksRepository.getReferenceById(taskId);
     }
+
     public TaskEntity updateTask(Long id, String title, String description, String dueDate, Boolean completed) {
         var task = getReferenceById(id);
 
@@ -113,5 +126,21 @@ public class TaskService {
         TaskEntity task = getTaskById(id);
         this.tasksRepository.deleteById(id);
         return task;
+    }
+
+    public List<TaskEntity> getTasksByTitle(String title) {
+        var tasksOptional = this.tasksRepository.findAllByTitle(title);
+        if (tasksOptional.isPresent()) {
+            return tasksOptional.get();
+        }
+        throw new TaskNotFoundByTitleException(title);
+    }
+
+    public List<TaskEntity> getTasksByCompleted(Boolean completed) {
+        var tasksOptional = this.tasksRepository.findAllByCompletedTrue(completed);
+        if (tasksOptional.isPresent()) {
+            return tasksOptional.get();
+        }
+        throw new Comp
     }
 }
