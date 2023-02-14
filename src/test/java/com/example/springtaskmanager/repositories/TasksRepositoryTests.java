@@ -55,8 +55,8 @@ public class TasksRepositoryTests {
         task2.setCompleted(true);
         tasksRepository.save(task2);
 
-        var completedTasks = tasksRepository.findAllByCompleted(true);
-        var incompleteTasks = tasksRepository.findAllByCompleted(false);
+        var completedTasks = tasksRepository.findAllByCompletedTrue().get();
+        var incompleteTasks = tasksRepository.findAllByCompletedFalse().get();
 
         assertEquals(1, completedTasks.size());
         assertEquals(1, incompleteTasks.size());
@@ -80,10 +80,10 @@ public class TasksRepositoryTests {
         task3.setCompleted(true);
         tasksRepository.save(task3);
 
-        var testTask1 = tasksRepository.findAllByTitle("Test Task1");
+        var testTask1 = tasksRepository.findAllByTitle("Test Task1").get();
         assertEquals(1, testTask1.size());
 
-        var testTask2 = tasksRepository.findAllByTitle("Test Task2");
+        var testTask2 = tasksRepository.findAllByTitle("Test Task2").get();
         assertEquals(2, testTask2.size());
     }
 

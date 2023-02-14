@@ -35,7 +35,9 @@ public class TaskController {
     }
 
     @GetMapping("/tasks")
-    public ResponseEntity<List<TaskResponseDTO>> getTasks(@RequestParam(name="title", required = false) String title, @RequestParam(name="completed", required = false) Boolean completed) {
+    public ResponseEntity<List<TaskResponseDTO>> getTasks(
+                            @RequestParam(name="title", required = false) String title, 
+                            @RequestParam(name="completed", required = false) Boolean completed) {
         if ((title == null) & (completed == null)) {
             List<TaskEntity> tasks = this.taskService.getTasks();
             List<TaskResponseDTO> responseDTOs = createListOfResponseDTOs(tasks);
