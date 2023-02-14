@@ -141,6 +141,6 @@ public class TaskService {
         if (tasksOptional.isPresent()) {
             return tasksOptional.get();
         }
-        throw new Comp
+        throw new CompletedTasksNotFoundException();
     }
 }
